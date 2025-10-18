@@ -11,6 +11,7 @@
         :root {
             --neon-color: #c7ff44; /* ネオンカラーを #c7ff44 に更新 */
             --dark-background: #111111; /* 一番外側の背景色を濃い黒に変更 */
+            --safe-size: 96vmin; /* JSがロードされるまでのフォールバックサイズ */
         }
         
         /* 全体レイアウト */
@@ -21,30 +22,22 @@
             flex-direction: column;
             align-items: center;
             justify-content: center; /* 中央寄せ */
-            padding: 1rem;
+            padding: 0; /* パディングを削除して最大化 */
             background-color: var(--dark-background); 
             position: relative; /* グリッドエフェクトの基準点 */
             color: white;
             transition: background-color 0.5s;
+            overflow: hidden; /* スクロールを禁止 */
         }
 
         /* --- iOS擬似フルスクリーン用スタイル (アドレスバー非表示は不可) --- */
         .ios-fullscreen-active {
-            /* ページ全体の余白/パディングを削除 */
             margin: 0 !important;
             padding: 0 !important;
             width: 100vw;
             height: 100vh;
-            overflow: hidden; /* スクロールを禁止 */
         }
-        /* iOS擬似フルスクリーン時の時計コンテナのサイズ調整 */
-        .ios-fullscreen-active #clockContainer {
-            /* 縦横比を保ちつつ、ビューポートの短い辺(vmin)に合わせて最大化 (98vminに変更し、iOSでの表示領域のズレを吸収) */
-            width: 98vmin !important; 
-            /* 縦長画面で縦いっぱいに広がるように、最大値をビューポートの高さに合わせる */
-            max-width: 100vh !important;
-            max-height: 100vh !important;
-        }
+        /* iOS擬似フルスクリーン時の時計コンテナのサイズ調整はJSで行うため、CSSはほぼ不要 */
         /* -------------------------------------- */
 
         /* --- グリッド/スキャンラインエフェクト --- */
@@ -69,46 +62,41 @@
         }
         /* -------------------------------------- */
         
-        /* ボタンのスタイル (ネオングローと境界線を削除) */
+        /* ボタンのスタイル */
         .neon-button {
             background-color: var(--dark-background); 
-            /* ネオン境界線とシャドウを削除しました */
             color: white;
-            transition: transform 0.3s, background-color 0.3s, box-shadow 0.3s; /* 変化を滑らかにする */
+            transition: transform 0.3s, background-color 0.3s, box-shadow 0.3s;
             z-index: 30;
         }
         .neon-button:hover {
-            transform: scale(1.05); /* ホバー時の拡大効果は維持 */
-            box-shadow: none; /* グロー効果は適用しない */
+            transform: scale(1.05);
         }
-        
-        /* 追加: フルスクリーン中のボタンの状態 */
         .is-fullscreen {
-            /* 押されている感じを出すために少し暗い色に */
             background-color: #222222; 
-            /* 控えめな白い境界線 (内側の影) を適用してアクティブ状態を示す */
             box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
-            transform: scale(1.02); /* わずかにスケールを維持 */
+            transform: scale(1.02);
         }
-        
         .is-fullscreen:hover {
-            transform: scale(1.08); /* ホバー時の拡大を少し強くする */
+            transform: scale(1.08);
         }
 
 
         /* 時計コンテナのスタイル - レスポンシブの中核 */
         #clockContainer {
-            /* 変更: 画面の短い方に合わせてサイズを確保 (96vmin に変更し、ブラウザUIの安全マージンを確保) */
-            width: 96vmin;      
+            /* 変更: JSで計算し、短い辺に常に収まる安全なサイズを使用 */
+            width: var(--safe-size);      
+            height: var(--safe-size); /* 正方形を維持 */
+            
             max-width: 100%;    
-            max-height: 100%; /* 縦画面/横画面の制限を親要素内に収まるように変更 */
-            aspect-ratio: 1 / 1; /* 正方形を維持 */
+            max-height: 100%; 
+            aspect-ratio: 1 / 1; 
             background-color: transparent; 
             border-radius: 0; 
             box-shadow: none; 
             padding: 0;
             transition: transform 300ms;
-            position: relative; /* 歯車アイコンの配置基準 */
+            position: relative; 
         }
 
         /* Canvasのスタイル */
@@ -136,7 +124,7 @@
         let neonColorState; // 現在のネオン色を保持する状態変数
         
         // 設定
-        const DIAL_COLOR = '#225822'; // 文字盤の内部背景色（濃い緑）に戻しました
+        const DIAL_COLOR = '#225822'; // 文字盤の内部背景色
 
         // 文字盤画像の設定
         let faceImageUrl = 'https://raw.githubusercontent.com/AfterEffects-OK/Ekidokei/main/base.png'; 
@@ -187,7 +175,7 @@
                 box.classList.remove('opacity-100');
                 box.classList.add('opacity-0');
                 setTimeout(() => box.classList.add('hidden'), 300);
-            }, 5000); // メッセージの表示時間を長くしました (5秒)
+            }, 5000); 
         }
 
         /**
@@ -198,14 +186,13 @@
             faceImageObj = null;
 
             if (!url || url.trim() === '') {
-                drawClock(); // URLが空なら画像なしで描画を継続
+                drawClock(); 
                 return;
             }
 
             const img = new Image();
-            img.crossOrigin = 'anonymous'; // CORS対応
+            img.crossOrigin = 'anonymous'; 
             
-            // タイムアウトを設定
             const timeout = setTimeout(() => {
                 img.onload = null; 
                 img.onerror = null; 
@@ -218,13 +205,10 @@
                 faceImageObj = img;
                 isImageLoaded = true;
                 showMessage('新しい文字盤画像を適用しました。', 'bg-green-500');
-                // drawClock() は requestAnimationFrame で既に動いているため、再描画を待つ
             };
             img.onerror = () => {
                 clearTimeout(timeout); 
-                // UIにも入力されたURLが問題がある可能性があることを警告
                 showMessage(`カスタム画像の読み込みに失敗しました。URLを確認してください。`, 'bg-red-500');
-                // drawClock() は requestAnimationFrame で既に動いているため、再描画を待つ
             };
             img.src = url;
         }
@@ -233,7 +217,6 @@
          * UIからURLを取得し、画像ロードをトリガーする
          */
         function applyImage() {
-            // UIから取得する際も、faceImageUrlを更新してからloadImageを呼ぶ
             faceImageUrl = document.getElementById('faceImageUrl').value;
             loadImage(faceImageUrl);
         }
@@ -242,13 +225,9 @@
          * ネオンカラーの変更を適用する
          */
         function changeNeonColor(newColor) {
-            // 1. CSS変数も更新 (UIボタン、ボディのネオン効果用)
             document.documentElement.style.setProperty('--neon-color', newColor);
-            // 2. JSの状態も更新 (Canvas描画用)
             neonColorState = newColor;
-            // requestAnimationFrame で自動更新される
             
-            // UI上の色プレビューを更新
             document.getElementById('neonColorPreview').style.backgroundColor = newColor;
             
             showMessage(`ネオンカラーを ${newColor} に変更しました。`, 'bg-indigo-500');
@@ -266,29 +245,25 @@
          * フルスクリーンモードの切り替え
          */
         function toggleFullscreen() {
-            // iOS判定: iOSの場合は擬似フルスクリーンに切り替える
             if (isIOS()) {
                 const isCurrentlyPseudoFullscreen = document.body.classList.contains('ios-fullscreen-active');
                 
                 document.body.classList.toggle('ios-fullscreen-active', !isCurrentlyPseudoFullscreen);
-                handleFullscreenChange(); // ボタンの状態を更新
-                
-                // PWA実行を促すメッセージに更新
+                handleFullscreenChange(); 
+                resizeCanvas(); // フルスクリーン状態が変わったら即座にリサイズを強制実行
+
                 const message = !isCurrentlyPseudoFullscreen 
-                    ? '【iOSの制限】アドレスバーは非表示になりません。完全に隠すには、ブラウザの共有メニューから「ホーム画面に追加」してPWAとして起動してください。擬似フルスクリーンモードを有効にしました。'
+                    ? '【iOSの制限】完全にフルスクリーンにするには、「ホーム画面に追加」してPWAとして起動してください。擬似フルスクリーンモードを有効にしました。'
                     : '擬似フルスクリーンモードを無効にしました。';
                 showMessage(message, !isCurrentlyPseudoFullscreen ? 'bg-yellow-600' : 'bg-indigo-500');
-                return; // iOSの場合はここで処理を終了
+                return;
             }
 
-            // 標準フルスクリーンAPIを使用
             if (!document.fullscreenElement) {
-                // フルスクリーンを開始
                 document.documentElement.requestFullscreen().catch(err => {
                     showMessage(`フルスクリーンモードを開始できませんでした: ${err.message}`, 'bg-red-500');
                 });
             } else {
-                // フルスクリーンを終了
                 document.exitFullscreen();
             }
         }
@@ -300,13 +275,10 @@
             const btn = document.getElementById('fullscreenToggleBtn');
             const iconContainer = btn.querySelector('#fullscreenIcon');
             
-            // 標準APIまたはiOS擬似フルスクリーンのどちらかがアクティブかチェック
             const isFullscreen = document.fullscreenElement || document.body.classList.contains('ios-fullscreen-active');
 
-            // フルスクリーン状態に応じて 'is-fullscreen' クラスをトグル
             btn.classList.toggle('is-fullscreen', isFullscreen); 
             
-            // 既存のアイコンをクリア
             iconContainer.innerHTML = ''; 
 
             if (isFullscreen) {
@@ -335,11 +307,9 @@
             
             modal.classList.remove('hidden');
             
-            // アニメーションを適用
             content.classList.remove('modal-enter');
             content.classList.add('modal-enter-active');
             
-            // UIのURL表示を現在の値に更新
             document.getElementById('faceImageUrl').value = faceImageUrl;
         }
 
@@ -350,75 +320,64 @@
             const modal = document.getElementById('settingsModal');
             const content = document.getElementById('settingsModalContent');
 
-            // アニメーションを逆再生
             content.classList.remove('modal-enter-active');
             content.classList.add('modal-enter');
 
             setTimeout(() => {
                  modal.classList.add('hidden');
-            }, 300); // CSS transition durationに合わせる
+            }, 300);
         }
 
         /**
          * 時計の描画処理をフレームレートに合わせて実行
          */
         function drawClock() {
-            // 毎回クリアして再描画
             ctx.clearRect(-radius, -radius, radius * 2, radius * 2); 
             
-            // 1. 文字盤の描画
             drawFace(ctx, radius);
             
-            // --- 2. デジタル時計のCanvas内描画 (針の下に表示するため、ここで描画) ---
             const now = new Date();
             let h = now.getHours();
             const m = now.getMinutes();
             const s = now.getSeconds();
             
-            // 0埋めして表示
             const digitalText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
             
             const color = neonColorState;
 
             ctx.save();
             
-            // 配置設定
-            ctx.font = 'bold ' + radius * 0.12 + "px Inter, sans-serif"; // サイズ調整
+            ctx.font = 'bold ' + radius * 0.12 + "px Inter, sans-serif";
             ctx.textBaseline = "middle";
             ctx.textAlign = "center";
             
-            // 中央より上に配置 (半径の約20%の位置に調整)
             const yPosition = radius * 0.20; 
             const textMetrics = ctx.measureText(digitalText);
             const textWidth = textMetrics.width;
-            const textHeight = radius * 0.12 * 1.2; // おおよその高さ
+            const textHeight = radius * 0.12 * 1.2;
             
             // 1. 黒い背景を描画
-            ctx.fillStyle = '#000000'; // 黒
-            ctx.shadowBlur = 0; // 背景にはグローなし
+            ctx.fillStyle = '#000000'; 
+            ctx.shadowBlur = 0; 
             ctx.fillRect(
-                -textWidth / 2 - radius * 0.02, // X座標: 中央から左にテキスト幅の半分 + パディング
-                yPosition - textHeight / 2 - radius * 0.02, // Y座標: 中央から上にテキスト高さの半分 + パディング
-                textWidth + radius * 0.04, // 幅: テキスト幅 + 両側パディング
-                textHeight + radius * 0.04 // 高さ: テキスト高さ + 上下パディング
+                -textWidth / 2 - radius * 0.02, 
+                yPosition - textHeight / 2 - radius * 0.02,
+                textWidth + radius * 0.04, 
+                textHeight + radius * 0.04 
             );
 
 
             // 2. テキスト（ネオンカラー）を描画
             ctx.fillStyle = color;
             ctx.shadowColor = color;
-            // グロー効果を大幅に抑えるために値を小さく設定
             ctx.shadowBlur = radius * 0.005; 
             
             ctx.fillText(digitalText, 0, yPosition);
 
             ctx.restore();
-            // -------------------------------------------------------------
             
-            // 3. 針の描画 (最後に描画することで最前面になる)
             drawTime(ctx, radius); 
 
-            // スイープ運針 (滑らかな動き) のため、requestAnimationFrameで継続的に描画
             window.requestAnimationFrameId = requestAnimationFrame(drawClock);
         }
 
@@ -440,25 +399,21 @@
             if (faceImageObj && isImageLoaded) {
                 const imgSize = radius * 2; 
 
-                // 正方形のクリッピングパスを設定
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(-radius, -radius, imgSize, imgSize); 
                 ctx.clip(); 
                 
-                // 画像を中央に、正方形エリアにぴったり収まるように描画
                 ctx.drawImage(faceImageObj, -radius, -radius, imgSize, imgSize);
                 
                 ctx.restore(); 
             }
 
             // 3. 目盛りと数字を描画 (画像が適用されていない場合のみ実行)
-            // 画像がロードされている場合、目盛りと数字の描画はスキップされる
             if (!isImageLoaded) { 
                 ctx.fillStyle = color; 
                 ctx.strokeStyle = color; 
                 
-                // ネオン効果を設定
                 ctx.shadowBlur = radius * 0.015;
                 ctx.shadowColor = color;
 
@@ -495,8 +450,6 @@
                     ctx.fillText(num.toString(), x, y);
                 }
             }
-            
-            // 針の描画に移るため、グロー効果はリセットしない
         }
 
 
@@ -511,31 +464,25 @@
             let millisecond = now.getMilliseconds();
             const color = neonColorState;
 
-            // 角度の計算
             hour = hour % 12;
             let hourAngle = (hour * Math.PI / 6) + (minute * Math.PI / (6 * 60)) + (second * Math.PI / (360 * 60));
-            // 分針の角度: スイープ運針を維持。長さを2%短縮 (0.7 -> 0.686)
             let minuteAngle = (minute * Math.PI / 30) + (second * Math.PI / (30 * 60)) + (millisecond * Math.PI / (30 * 60 * 1000));
-            
-            // 秒針の角度: 1秒ごとのステップ運針
             let secondAngle = (second * Math.PI / 30); 
 
-            // グロー効果を設定 (0.02 -> 0.01 に弱体化)
             ctx.shadowBlur = radius * 0.01;
             ctx.shadowColor = color;
 
-            // 秒針を描画 (長さ: radius * 0.70, 根本の幅: 0.015)
+            // 秒針を描画
             drawHand(ctx, secondAngle, radius * 0.70, radius * 0.015, color, 'second'); 
-            // 分針を描画 (長さ: radius * 0.686, 根本の幅: 0.04)
+            // 分針を描画
             drawHand(ctx, minuteAngle, radius * 0.686, radius * 0.04, color, 'minute'); 
-            // 時針を描画 (長さ: radius * 0.40, 根本の幅: 0.08)
+            // 時針を描画
             drawHand(ctx, hourAngle, radius * 0.40, radius * 0.08, color, 'hour'); 
 
-            // 中央のピン (少し大きく、より強く光らせる)
+            // 中央のピン
             ctx.beginPath();
             ctx.arc(0, 0, radius * 0.04, 0, 2 * Math.PI);
             ctx.fillStyle = color;
-            // グロー効果を弱体化 (0.05 -> 0.025 に弱体化)
             ctx.shadowBlur = radius * 0.025; 
             ctx.shadowColor = color;
             ctx.fill();
@@ -551,28 +498,21 @@
         function drawHand(ctx, pos, length, baseWidth, color, type) {
             
             ctx.save();
-            ctx.rotate(pos); // 針の角度に回転
+            ctx.rotate(pos); 
             
             ctx.fillStyle = color;
             ctx.strokeStyle = color;
-            ctx.lineWidth = radius * 0.005; // 輪郭線は細く設定
+            ctx.lineWidth = radius * 0.005; 
 
-            // 尾部の長さ (時針は短く、秒針は長め)
             const tailLength = radius * (type === 'second' ? 0.2 : type === 'minute' ? 0.1 : 0.05);
             
-            // 時針・分針の先端形状設定
-            let tipBaseWidth = 0; // 尖り始める部分の幅
-            
-            // 長針は針の長さの98%の位置から先端に向かって鋭い三角形になるように設定
+            let tipBaseWidth = 0; 
             const tipLengthRatio = (type === 'minute') ? 0.98 : 0.96; 
             
-            // 時針または分針の場合
             if (type === 'minute' || type === 'hour') {
-                // 尖り始める部分の幅を、根元の幅の約50%に設定
                 tipBaseWidth = baseWidth * 0.5; 
             }
 
-            // 針の形状の定義 (多角形)
             ctx.beginPath();
             
             // 1. 根本の左下 (尾部の端)
@@ -581,15 +521,13 @@
             // 2. 根本の右下 (尾部の端)
             ctx.lineTo(baseWidth / 2, tailLength); 
             
-            // 3. 根元上部（中心）の右側 (幅 baseWidth * 0.4 の地点)
+            // 3. 根元上部（中心）の右側
             ctx.lineTo(baseWidth * 0.4, 0); 
             
-            // --- 尖った先端部分の定義 ---
             if (tipBaseWidth > 0) {
                 const bodyLength = length * tipLengthRatio;
                 
                 // 4. 太い本体の終わり（右側）
-                // 根元の幅からこの位置まで滑らかに細くなっている
                 ctx.lineTo(tipBaseWidth / 2, -bodyLength); 
                 
                 // 5. 頂点 (鋭利な先端)
@@ -601,27 +539,39 @@
                 // 7. 根元上部（中心）の左側に戻る
                 ctx.lineTo(-baseWidth * 0.4, 0); 
             } else {
-                // 秒針の場合 (tipBaseWidth = 0) - 全体が尖った矢印
-                ctx.lineTo(0, -length); // 頂点
-                ctx.lineTo(-baseWidth * 0.4, 0); // 根元上部（中心）の左側に戻る
+                // 秒針の場合
+                ctx.lineTo(0, -length); 
+                ctx.lineTo(-baseWidth * 0.4, 0); 
             }
-            // -------------------------------------------------------------
 
             ctx.closePath();
             
-            ctx.fill(); // 塗りつぶし
-            ctx.stroke(); // 輪郭線
+            ctx.fill(); 
+            ctx.stroke(); 
 
-            ctx.restore(); // 回転を元に戻す
+            ctx.restore();
         }
 
 
         /**
          * Canvasのサイズを親要素に合わせて設定し、再描画する (レスポンシブ対応)
+         * この関数がiOSの縦横切り替えの不安定さ対策の中核です。
          */
         function resizeCanvas() {
+            // 1. 画面の幅と高さを取得し、短い方を基準にサイズを計算 (iOS対策)
+            // window.innerHeightを使用することで、アドレスバーの有無による表示領域の変化に対応します。
+            const minDimension = Math.min(window.innerWidth, window.innerHeight);
+            
+            // 短い方の98%を安全なサイズとして設定 (2%のマージン)
+            const safeSize = minDimension * 0.98; 
+
+            // CSSカスタムプロパティに設定して、#clockContainerのサイズを強制的に制御
+            document.documentElement.style.setProperty('--safe-size', `${safeSize}px`);
+            
+            // 2. Canvas自身の物理的なリサイズ処理
             const container = canvas.parentNode;
-            const size = container.offsetWidth;
+            // containerのoffsetWidthは、上記で設定したCSSカスタムプロパティによって定義される
+            const size = container.offsetWidth; 
             const scale = window.devicePixelRatio || 1;
             
             // 論理サイズを設定
@@ -656,13 +606,13 @@
             neonColorState = initialColor;
 
             // UIの初期値を設定
-            document.getElementById('faceImageUrl').value = faceImageUrl; // URLを更新
+            document.getElementById('faceImageUrl').value = faceImageUrl;
             document.getElementById('neonColorPicker').value = initialColor;
-            document.getElementById('neonColorPreview').style.backgroundColor = initialColor; // プレビューカラー設定
+            document.getElementById('neonColorPreview').style.backgroundColor = initialColor;
             
             // --- イベントリスナーを設定 ---
             document.getElementById('neonColorPicker').onchange = (e) => changeNeonColor(e.target.value);
-            const toggleGridInput = document.getElementById('toggleGrid'); // 新しい変数
+            const toggleGridInput = document.getElementById('toggleGrid');
             toggleGridInput.onchange = (e) => toggleGridEffect(e.target.checked);
             
             // フルスクリーンボタン
@@ -674,19 +624,17 @@
             document.getElementById('openSettingsBtn').onclick = openSettingsModal;
             document.getElementById('closeSettingsBtn').onclick = closeSettingsModal;
             document.getElementById('settingsModal').onclick = (e) => {
-                // オーバーレイをクリックした場合も閉じる
                 if (e.target.id === 'settingsModal') {
                     closeSettingsModal();
                 }
             };
             
-            // 初期状態に応じてグリッドエフェクトを適用 (HTMLで'checked'を削除したため、初期値はfalse)
             toggleGridEffect(document.getElementById('toggleGrid').checked); 
             
             // 画像の自動適用
             loadImage(faceImageUrl);
 
-            // 画面サイズ変更時のリサイズ
+            // 画面サイズ変更時のリサイズ (iOSの縦横切り替えに対応)
             window.addEventListener('resize', resizeCanvas);
             
             // アニメーションループ開始
@@ -715,7 +663,6 @@
         </button>
 
         <!-- ⚙️ 設定アイコンボタン (Absolute - 時計コンテナ内、右上隅) -->
-        <!-- 変更点: p-3 から p-2 に、h-6 w-6 から h-5 w-5 に変更し、フルスクリーンボタンとサイズを合わせました -->
         <button id="openSettingsBtn" class="neon-button absolute top-2 right-2 p-2 rounded-full transition duration-300">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37h.001z" />
