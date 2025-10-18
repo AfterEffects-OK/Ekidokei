@@ -28,6 +28,26 @@
             transition: background-color 0.5s;
         }
 
+        /* --- iOS擬似フルスクリーン用スタイル (追加) --- */
+        .ios-fullscreen-active {
+            /* ページ全体の余白/パディングを削除 */
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; /* スクロールを禁止 */
+        }
+        /* iOS擬似フルスクリーン時の時計コンテナのサイズ調整 */
+        .ios-fullscreen-active #clockContainer {
+            /* 縦横比を保ちつつ、ビューポートの短い辺(vmin)に合わせて最大化 */
+            width: 100vmin !important; 
+            height: 100vmin !important;
+            /* 縦長画面で縦いっぱいに広がるように、最大値をビューポートの高さに合わせる */
+            max-width: 100vh !important;
+            max-height: 100vh !important;
+        }
+        /* -------------------------------------- */
+
         /* --- グリッド/スキャンラインエフェクト --- */
         body::before {
             content: '';
@@ -137,6 +157,22 @@
         }
 
         /**
+         * ユーザーエージェントからiOSデバイスを判定
+         */
+        function isIOS() {
+            return [
+                'iPad Simulator',
+                'iPhone Simulator',
+                'iPod Simulator',
+                'iPad',
+                'iPhone',
+                'iPod'
+            ].includes(navigator.platform)
+            // iPadOS 13+ detection
+            || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+        }
+
+        /**
          * メッセージボックスを表示する
          */
         function showMessage(message, colorClass = 'bg-blue-500') {
@@ -229,6 +265,18 @@
          * フルスクリーンモードの切り替え
          */
         function toggleFullscreen() {
+            // iOS判定: iOSの場合は擬似フルスクリーンに切り替える
+            if (isIOS()) {
+                const isCurrentlyPseudoFullscreen = document.body.classList.contains('ios-fullscreen-active');
+                
+                document.body.classList.toggle('ios-fullscreen-active', !isCurrentlyPseudoFullscreen);
+                handleFullscreenChange(); // ボタンの状態を更新
+                
+                showMessage(`iOSでは擬似フルスクリーンモードを${!isCurrentlyPseudoFullscreen ? '有効' : '無効'}にしました。`, 'bg-yellow-600');
+                return; // iOSの場合はここで処理を終了
+            }
+
+            // 標準フルスクリーンAPIを使用
             if (!document.fullscreenElement) {
                 // フルスクリーンを開始
                 document.documentElement.requestFullscreen().catch(err => {
@@ -246,7 +294,9 @@
         function handleFullscreenChange() {
             const btn = document.getElementById('fullscreenToggleBtn');
             const iconContainer = btn.querySelector('#fullscreenIcon');
-            const isFullscreen = document.fullscreenElement;
+            
+            // 標準APIまたはiOS擬似フルスクリーンのどちらかがアクティブかチェック
+            const isFullscreen = document.fullscreenElement || document.body.classList.contains('ios-fullscreen-active');
 
             // フルスクリーン状態に応じて 'is-fullscreen' クラスをトグル
             btn.classList.toggle('is-fullscreen', isFullscreen); 
