@@ -28,7 +28,7 @@
             transition: background-color 0.5s;
         }
 
-        /* --- iOS擬似フルスクリーン用スタイル (追加) --- */
+        /* --- iOS擬似フルスクリーン用スタイル (アドレスバー非表示は不可) --- */
         .ios-fullscreen-active {
             /* ページ全体の余白/パディングを削除 */
             margin: 0 !important;
@@ -186,7 +186,7 @@
                 box.classList.remove('opacity-100');
                 box.classList.add('opacity-0');
                 setTimeout(() => box.classList.add('hidden'), 300);
-            }, 3000);
+            }, 5000); // メッセージの表示時間を長くしました (5秒)
         }
 
         /**
@@ -258,7 +258,7 @@
          */
         function toggleGridEffect(isOn) {
             document.body.classList.toggle('no-grid', !isOn);
-            showMessage(`グリッドエフェクトを${isOn ? '有効' : '無効'}にしました。`, 'bg-indigo-500');
+            showMessage(`背景グリッドエフェクトを${isOn ? '有効' : '無効'}にしました。`, 'bg-indigo-500');
         }
 
         /**
@@ -272,7 +272,11 @@
                 document.body.classList.toggle('ios-fullscreen-active', !isCurrentlyPseudoFullscreen);
                 handleFullscreenChange(); // ボタンの状態を更新
                 
-                showMessage(`iOSでは擬似フルスクリーンモードを${!isCurrentlyPseudoFullscreen ? '有効' : '無効'}にしました。`, 'bg-yellow-600');
+                // PWA実行を促すメッセージに更新
+                const message = !isCurrentlyPseudoFullscreen 
+                    ? '【iOSの制限】アドレスバーは非表示になりません。完全に隠すには、ブラウザの共有メニューから「ホーム画面に追加」してPWAとして起動してください。擬似フルスクリーンモードを有効にしました。'
+                    : '擬似フルスクリーンモードを無効にしました。';
+                showMessage(message, !isCurrentlyPseudoFullscreen ? 'bg-yellow-600' : 'bg-indigo-500');
                 return; // iOSの場合はここで処理を終了
             }
 
