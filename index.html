@@ -706,10 +706,9 @@
         <canvas id="clockCanvas"></canvas>
         
         <!-- 🖥️ フルスクリーン切り替えボタン (Absolute - 時計コンテナ内、左上隅) -->
-        <!-- 修正: -top-4 -left-4 から top-2 left-2 に変更し、時計の内側に配置 -->
         <button id="fullscreenToggleBtn" class="neon-button absolute top-2 left-2 p-2 rounded-full transition duration-300">
             <span id="fullscreenIcon">
-                <!-- 初期アイコン: 最大化 (handleFullscreenChangeで更新されます) -->
+                <!-- 初期アイコン: h-5 w-5 -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 8V4h4"/><path d="M20 8V4h-4"/><path d="M4 16v4h4"/><path d="M16 20h4v-4"/>
                 </svg>
@@ -717,9 +716,9 @@
         </button>
 
         <!-- ⚙️ 設定アイコンボタン (Absolute - 時計コンテナ内、右上隅) -->
-        <!-- 修正: -top-4 -right-4 から top-2 right-2 に変更し、時計の内側に配置 -->
-        <button id="openSettingsBtn" class="neon-button absolute top-2 right-2 p-3 rounded-full transition duration-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <!-- 変更点: p-3 から p-2 に、h-6 w-6 から h-5 w-5 に変更し、フルスクリーンボタンとサイズを合わせました -->
+        <button id="openSettingsBtn" class="neon-button absolute top-2 right-2 p-2 rounded-full transition duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37h.001z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
