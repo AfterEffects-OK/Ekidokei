@@ -39,9 +39,8 @@
         }
         /* iOS擬似フルスクリーン時の時計コンテナのサイズ調整 */
         .ios-fullscreen-active #clockContainer {
-            /* 縦横比を保ちつつ、ビューポートの短い辺(vmin)に合わせて最大化 */
-            width: 100vmin !important; 
-            height: 100vmin !important;
+            /* 縦横比を保ちつつ、ビューポートの短い辺(vmin)に合わせて最大化 (98vminに変更し、iOSでの表示領域のズレを吸収) */
+            width: 98vmin !important; 
             /* 縦長画面で縦いっぱいに広がるように、最大値をビューポートの高さに合わせる */
             max-width: 100vh !important;
             max-height: 100vh !important;
@@ -99,10 +98,10 @@
 
         /* 時計コンテナのスタイル - レスポンシブの中核 */
         #clockContainer {
-            /* 変更: 画面の短い方に合わせて100%のサイズを確保 (100vmin) */
-            width: 100vmin;      
-            /* 変更: 縦長画面で縦いっぱいに伸びないように制限を100vhに設定 */
-            max-width: 100vh;    
+            /* 変更: 画面の短い方に合わせてサイズを確保 (96vmin に変更し、ブラウザUIの安全マージンを確保) */
+            width: 96vmin;      
+            max-width: 100%;    
+            max-height: 100%; /* 縦画面/横画面の制限を親要素内に収まるように変更 */
             aspect-ratio: 1 / 1; /* 正方形を維持 */
             background-color: transparent; 
             border-radius: 0; 
