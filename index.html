@@ -50,14 +50,20 @@
         }
         /* -------------------------------------- */
         
-        /* 歯車アイコンのネオングロー */
-        #openSettingsBtn {
+        /* ボタンのネオングロー共通スタイル */
+        .neon-button {
             box-shadow: 0 0 10px rgba(199, 255, 68, 0.6); /* ネオンカラーに合わせたシャドウ */
+            background-color: var(--dark-background); 
+            border: 2px solid var(--neon-color);
+            color: white;
+            transition: transform 0.3s, box-shadow 0.3s;
+            z-index: 30;
         }
-        #openSettingsBtn:hover {
+        .neon-button:hover {
             transform: scale(1.05);
             box-shadow: 0 0 15px var(--neon-color);
         }
+
 
         /* 時計コンテナのスタイル - レスポンシブの中核 */
         #clockContainer {
@@ -100,7 +106,6 @@
         const DIAL_COLOR = '#225822'; // 文字盤の内部背景色（濃い緑）に戻しました
 
         // 文字盤画像の設定
-        // 画像ロード失敗の原因となっていたURLをGitHubのRaw Content URLに修正
         let faceImageUrl = 'https://raw.githubusercontent.com/AfterEffects-OK/Ekidokei/main/base.png'; 
         let faceImageObj = null;
         let isImageLoaded = false;
@@ -206,6 +211,48 @@
         function toggleGridEffect(isOn) {
             document.body.classList.toggle('no-grid', !isOn);
             showMessage(`グリッドエフェクトを${isOn ? '有効' : '無効'}にしました。`, 'bg-indigo-500');
+        }
+
+        /**
+         * フルスクリーンモードの切り替え
+         */
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                // フルスクリーンを開始
+                document.documentElement.requestFullscreen().catch(err => {
+                    showMessage(`フルスクリーンモードを開始できませんでした: ${err.message}`, 'bg-red-500');
+                });
+            } else {
+                // フルスクリーンを終了
+                document.exitFullscreen();
+            }
+        }
+
+        /**
+         * フルスクリーン状態が変更されたときにボタンのアイコンを更新する
+         */
+        function handleFullscreenChange() {
+            const btn = document.getElementById('fullscreenToggleBtn');
+            const iconContainer = btn.querySelector('#fullscreenIcon');
+            
+            // 既存のアイコンをクリア
+            iconContainer.innerHTML = ''; 
+
+            if (document.fullscreenElement) {
+                // フルスクリーン中のアイコン (最小化/終了)
+                iconContainer.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                    </svg>
+                `;
+            } else {
+                // 通常モードのアイコン (最大化/開始)
+                iconContainer.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 8V4h4"/><path d="M20 8V4h-4"/><path d="M4 16v4h4"/><path d="M16 20h4v-4"/>
+                    </svg>
+                `;
+            }
         }
         
         /**
@@ -542,10 +589,15 @@
             document.getElementById('neonColorPicker').value = initialColor;
             document.getElementById('neonColorPreview').style.backgroundColor = initialColor; // プレビューカラー設定
             
-            // イベントリスナーを設定
+            // --- イベントリスナーを設定 ---
             document.getElementById('neonColorPicker').onchange = (e) => changeNeonColor(e.target.value);
             const toggleGridInput = document.getElementById('toggleGrid'); // 新しい変数
             toggleGridInput.onchange = (e) => toggleGridEffect(e.target.checked);
+            
+            // フルスクリーンボタン
+            document.getElementById('fullscreenToggleBtn').onclick = toggleFullscreen;
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            handleFullscreenChange(); // 初期アイコン設定
             
             // モーダルのイベントリスナー
             document.getElementById('openSettingsBtn').onclick = openSettingsModal;
@@ -581,9 +633,20 @@
     <div id="clockContainer" class="flex items-center justify-center">
         <canvas id="clockCanvas"></canvas>
         
-        <!-- ⚙️ 設定アイコンボタン (Absolute - 時計コンテナ内) -->
-        <!-- top-0 right-0 でコンテナの右上隅に配置 -->
-        <button id="openSettingsBtn" class="absolute -top-4 -right-4 p-3 rounded-full transition duration-300 text-white z-30" style="background-color: var(--dark-background); border: 2px solid var(--neon-color);">
+        <!-- 🖥️ フルスクリーン切り替えボタン (Absolute - 時計コンテナ内、左上隅) -->
+        <!-- -top-4 -left-4 でコンテナの左上隅に配置 -->
+        <button id="fullscreenToggleBtn" class="neon-button absolute -top-4 -left-4 p-2 rounded-full transition duration-300">
+            <span id="fullscreenIcon">
+                <!-- 初期アイコン: 最大化 (handleFullscreenChangeで更新されます) -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 8V4h4"/><path d="M20 8V4h-4"/><path d="M4 16v4h4"/><path d="M16 20h4v-4"/>
+                </svg>
+            </span>
+        </button>
+
+        <!-- ⚙️ 設定アイコンボタン (Absolute - 時計コンテナ内、右上隅) -->
+        <!-- -top-4 -right-4 でコンテナの右上隅に配置 -->
+        <button id="openSettingsBtn" class="neon-button absolute -top-4 -right-4 p-3 rounded-full transition duration-300">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37h.001z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
