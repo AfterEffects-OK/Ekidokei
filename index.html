@@ -50,18 +50,30 @@
         }
         /* -------------------------------------- */
         
-        /* ボタンのネオングロー共通スタイル */
+        /* ボタンのスタイル (ネオングローと境界線を削除) */
         .neon-button {
-            box-shadow: 0 0 10px rgba(199, 255, 68, 0.6); /* ネオンカラーに合わせたシャドウ */
             background-color: var(--dark-background); 
-            border: 2px solid var(--neon-color);
+            /* ネオン境界線とシャドウを削除しました */
             color: white;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.3s, background-color 0.3s, box-shadow 0.3s; /* 変化を滑らかにする */
             z-index: 30;
         }
         .neon-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px var(--neon-color);
+            transform: scale(1.05); /* ホバー時の拡大効果は維持 */
+            box-shadow: none; /* グロー効果は適用しない */
+        }
+        
+        /* 追加: フルスクリーン中のボタンの状態 */
+        .is-fullscreen {
+            /* 押されている感じを出すために少し暗い色に */
+            background-color: #222222; 
+            /* 控えめな白い境界線 (内側の影) を適用してアクティブ状態を示す */
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+            transform: scale(1.02); /* わずかにスケールを維持 */
+        }
+        
+        .is-fullscreen:hover {
+            transform: scale(1.08); /* ホバー時の拡大を少し強くする */
         }
 
 
@@ -234,11 +246,15 @@
         function handleFullscreenChange() {
             const btn = document.getElementById('fullscreenToggleBtn');
             const iconContainer = btn.querySelector('#fullscreenIcon');
+            const isFullscreen = document.fullscreenElement;
+
+            // フルスクリーン状態に応じて 'is-fullscreen' クラスをトグル
+            btn.classList.toggle('is-fullscreen', isFullscreen); 
             
             // 既存のアイコンをクリア
             iconContainer.innerHTML = ''; 
 
-            if (document.fullscreenElement) {
+            if (isFullscreen) {
                 // フルスクリーン中のアイコン (最小化/終了)
                 iconContainer.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -610,7 +626,7 @@
             };
             
             // 初期状態に応じてグリッドエフェクトを適用 (HTMLで'checked'を削除したため、初期値はfalse)
-            toggleGridEffect(toggleGridInput.checked); 
+            toggleGridEffect(document.getElementById('toggleGrid').checked); 
             
             // 画像の自動適用
             loadImage(faceImageUrl);
