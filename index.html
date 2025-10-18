@@ -100,7 +100,8 @@
         const DIAL_COLOR = '#225822'; // 文字盤の内部背景色（濃い緑）に戻しました
 
         // 文字盤画像の設定
-        let faceImageUrl = 'https://raw.githubusercontent.com/AfterEffects-OK/PortalSite/main/base.png';
+        // 画像ロード失敗の原因となっていたURLをGitHubのRaw Content URLに修正
+        let faceImageUrl = 'https://raw.githubusercontent.com/AfterEffects-OK/Ekidokei/main/base.png'; 
         let faceImageObj = null;
         let isImageLoaded = false;
 
@@ -167,6 +168,7 @@
             };
             img.onerror = () => {
                 clearTimeout(timeout); 
+                // UIにも入力されたURLが問題がある可能性があることを警告
                 showMessage(`カスタム画像の読み込みに失敗しました。URLを確認してください。`, 'bg-red-500');
                 // drawClock() は requestAnimationFrame で既に動いているため、再描画を待つ
             };
@@ -177,6 +179,7 @@
          * UIからURLを取得し、画像ロードをトリガーする
          */
         function applyImage() {
+            // UIから取得する際も、faceImageUrlを更新してからloadImageを呼ぶ
             faceImageUrl = document.getElementById('faceImageUrl').value;
             loadImage(faceImageUrl);
         }
@@ -217,6 +220,9 @@
             // アニメーションを適用
             content.classList.remove('modal-enter');
             content.classList.add('modal-enter-active');
+            
+            // UIのURL表示を現在の値に更新
+            document.getElementById('faceImageUrl').value = faceImageUrl;
         }
 
         /**
@@ -329,6 +335,7 @@
             }
 
             // 3. 目盛りと数字を描画 (画像が適用されていない場合のみ実行)
+            // 画像がロードされている場合、目盛りと数字の描画はスキップされる
             if (!isImageLoaded) { 
                 ctx.fillStyle = color; 
                 ctx.strokeStyle = color; 
@@ -531,7 +538,7 @@
             neonColorState = initialColor;
 
             // UIの初期値を設定
-            document.getElementById('faceImageUrl').value = faceImageUrl;
+            document.getElementById('faceImageUrl').value = faceImageUrl; // URLを更新
             document.getElementById('neonColorPicker').value = initialColor;
             document.getElementById('neonColorPreview').style.backgroundColor = initialColor; // プレビューカラー設定
             
