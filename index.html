@@ -18,26 +18,27 @@
         body { 
             font-family: 'Inter', sans-serif; 
             min-height: 100vh;
+            /* bodyは常にflex-col（縦方向）で中央寄せを維持 */
             display: flex;
-            flex-direction: column; /* 小さい画面では縦に並べる */
+            flex-direction: column; 
             align-items: center;
             justify-content: center; /* 中央寄せ */
-            padding: 0; /* パディングを削除して最大化 */
+            padding: 0; 
             background-color: var(--dark-background); 
-            position: relative; /* グリッドエフェクトの基準点 */
+            position: relative; 
             color: white;
             transition: background-color 0.5s;
-            overflow: hidden; /* スクロールを禁止 */
+            overflow: hidden; 
         }
         
-        /* 画面が広い場合 (lg: 以上) は横並びにする */
-        @media (min-width: 1024px) {
+        /* 画面が広い場合 (lg: 以上) の横並びは不要になったため、CSSから削除します。 */
+        /* ボタンはfixedで下部に固定されるため、bodyのレイアウトに依存しません。 */
+        /* @media (min-width: 1024px) {
             body {
-                /* Tailwind class: lg:flex-row lg:gap-12 */
                 flex-direction: row; 
-                gap: 3rem; /* 48px */
+                gap: 3rem; 
             }
-        }
+        } */
 
         /* --- iOS擬似フルスクリーン用スタイル (アドレスバー非表示は不可) --- */
         .ios-fullscreen-active {
@@ -46,7 +47,6 @@
             width: 100vw;
             height: 100vh;
         }
-        /* iOS擬似フルスクリーン時の時計コンテナのサイズ調整はJSで行うため、CSSはほぼ不要 */
         /* -------------------------------------- */
 
         /* --- グリッド/スキャンラインエフェクト --- */
@@ -177,7 +177,8 @@
          */
         function showMessage(message, colorClass = 'bg-blue-500') {
             const box = document.getElementById('messageBox');
-            box.className = `fixed bottom-4 right-4 text-white p-3 rounded-lg shadow-xl transition-opacity duration-300 z-50 ${colorClass}`;
+            // メッセージボックスはボタンと重ならないように、bottom-16 (下から4rem) に配置
+            box.className = `fixed bottom-16 right-4 text-white p-3 rounded-lg shadow-xl transition-opacity duration-300 z-50 ${colorClass}`;
             box.textContent = message;
             box.classList.remove('hidden', 'opacity-0');
             box.classList.add('opacity-100');
@@ -657,15 +658,14 @@
 
     </script>
 </head>
-<!-- bodyにレスポンシブなFlex設定を追加: 小さい画面では縦(デフォルト)、lg以上で横に並べる -->
-<body class="font-sans flex flex-col items-center justify-center lg:flex-row lg:gap-12">
+<!-- bodyは常に中央寄せのflex-col（縦方向）を維持します -->
+<body class="font-sans flex flex-col items-center justify-center">
 
-    <!-- 🖥️ フルスクリーン切り替えボタン (Left/Top) -->
-    <!-- fixed top-4 left-4: 小さい画面では左上隅に固定 -->
-    <!-- lg:static lg:p-5 lg:order-1: 広い画面ではFlex要素として左側に配置、paddingも大きくする -->
+    <!-- 🖥️ フルスクリーン切り替えボタン (Left/Bottom) -->
+    <!-- large screen (lg:) の static/order-* 設定を削除し、fixed bottom-4 left-4 を維持 -->
     <button id="fullscreenToggleBtn" 
         class="neon-button p-4 rounded-full transition duration-300 
-               fixed top-4 left-4 lg:static lg:p-5 lg:order-1 z-40">
+               fixed bottom-4 left-4 z-40">
         <span id="fullscreenIcon">
             <!-- 初期アイコン: h-5 w-5 -->
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -675,17 +675,16 @@
     </button>
     
     <!-- 時計コンテナ (レスポンシブなサイズ設定) -->
-    <!-- lg:order-2: 広い画面では中央に配置 -->
-    <div id="clockContainer" class="flex items-center justify-center lg:order-2">
+    <!-- large screen (lg:) の order-2 設定を削除 -->
+    <div id="clockContainer" class="flex items-center justify-center">
         <canvas id="clockCanvas"></canvas>
     </div>
 
-    <!-- ⚙️ 設定アイコンボタン (Right/Top) -->
-    <!-- fixed top-4 right-4: 小さい画面では右上隅に固定 -->
-    <!-- lg:static lg:p-5 lg:order-3: 広い画面ではFlex要素として右側に配置、paddingも大きくする -->
+    <!-- ⚙️ 設定アイコンボタン (Right/Bottom) -->
+    <!-- large screen (lg:) の static/order-* 設定を削除し、fixed bottom-4 right-4 を維持 -->
     <button id="openSettingsBtn" 
         class="neon-button p-4 rounded-full transition duration-300 
-               fixed top-4 right-4 lg:static lg:p-5 lg:order-3 z-40">
+               fixed bottom-4 right-4 z-40">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37h.001z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -736,7 +735,7 @@
     </div>
     
     <!-- メッセージボックス -->
-    <div id="messageBox" class="fixed bottom-4 right-4 text-white p-3 rounded-lg shadow-xl hidden opacity-0 z-50"></div>
+    <div id="messageBox" class="fixed bottom-16 right-4 text-white p-3 rounded-lg shadow-xl hidden opacity-0 z-50"></div>
     
 </body>
 </html>
