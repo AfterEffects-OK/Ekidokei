@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ネオン風 駅時計</title>
+    <title>駅時計WEB</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -31,15 +31,6 @@
             overflow: hidden; 
         }
         
-        /* 画面が広い場合 (lg: 以上) の横並びは不要になったため、CSSから削除します。 */
-        /* ボタンはfixedで下部に固定されるため、bodyのレイアウトに依存しません。 */
-        /* @media (min-width: 1024px) {
-            body {
-                flex-direction: row; 
-                gap: 3rem; 
-            }
-        } */
-
         /* --- iOS擬似フルスクリーン用スタイル (アドレスバー非表示は不可) --- */
         .ios-fullscreen-active {
             margin: 0 !important;
@@ -133,6 +124,7 @@
         // グローバル変数
         let canvas, ctx, radius;
         let neonColorState; // 現在のネオン色を保持する状態変数
+        let showDigitalClock = true; // デジタル時計の表示状態 (新しく追加)
         
         // 設定
         const DIAL_COLOR = '#225822'; // 文字盤の内部背景色
@@ -244,13 +236,23 @@
             
             showMessage(`ネオンカラーを ${newColor} に変更しました。`, 'bg-indigo-500');
         }
-
+        
         /**
          * グリッドエフェクトの表示/非表示を切り替える
          */
         function toggleGridEffect(isOn) {
             document.body.classList.toggle('no-grid', !isOn);
+            localStorage.setItem('showGridEffect', isOn); // LocalStorageに保存
             showMessage(`背景グリッドエフェクトを${isOn ? '有効' : '無効'}にしました。`, 'bg-indigo-500');
+        }
+
+        /**
+         * デジタル時計の表示/非表示を切り替える (新しく追加)
+         */
+        function toggleDigitalClock(isOn) {
+            showDigitalClock = isOn;
+            localStorage.setItem('showDigitalClock', isOn); // LocalStorageに保存
+            showMessage(`デジタル時計の表示を${isOn ? '有効' : '無効'}にしました。`, 'bg-indigo-500');
         }
 
         /**
@@ -323,6 +325,10 @@
             content.classList.add('modal-enter-active');
             
             document.getElementById('faceImageUrl').value = faceImageUrl;
+
+            // モーダルを開く際に現在の状態をUIに反映
+            document.getElementById('toggleGrid').checked = document.body.classList.contains('no-grid') === false;
+            document.getElementById('toggleDigital').checked = showDigitalClock;
         }
 
         /**
@@ -353,40 +359,43 @@
             const m = now.getMinutes();
             const s = now.getSeconds();
             
-            const digitalText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-            
-            const color = neonColorState;
+            // デジタル時計の表示が有効な場合のみ描画 (修正箇所)
+            if (showDigitalClock) {
+                const digitalText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                
+                const color = neonColorState;
 
-            ctx.save();
-            
-            ctx.font = 'bold ' + radius * 0.12 + "px Inter, sans-serif";
-            ctx.textBaseline = "middle";
-            ctx.textAlign = "center";
-            
-            const yPosition = radius * 0.20; 
-            const textMetrics = ctx.measureText(digitalText);
-            const textWidth = textMetrics.width;
-            const textHeight = radius * 0.12 * 1.2;
-            
-            // 1. 黒い背景を描画
-            ctx.fillStyle = '#000000'; 
-            ctx.shadowBlur = 0; 
-            ctx.fillRect(
-                -textWidth / 2 - radius * 0.02, 
-                yPosition - textHeight / 2 - radius * 0.02,
-                textWidth + radius * 0.04, 
-                textHeight + radius * 0.04 
-            );
+                ctx.save();
+                
+                ctx.font = 'bold ' + radius * 0.12 + "px Inter, sans-serif";
+                ctx.textBaseline = "middle";
+                ctx.textAlign = "center";
+                
+                const yPosition = radius * 0.20; 
+                const textMetrics = ctx.measureText(digitalText);
+                const textWidth = textMetrics.width;
+                const textHeight = radius * 0.12 * 1.2;
+                
+                // 1. 黒い背景を描画
+                ctx.fillStyle = '#000000'; 
+                ctx.shadowBlur = 0; 
+                ctx.fillRect(
+                    -textWidth / 2 - radius * 0.02, 
+                    yPosition - textHeight / 2 - radius * 0.02,
+                    textWidth + radius * 0.04, 
+                    textHeight + radius * 0.04 
+                );
 
 
-            // 2. テキスト（ネオンカラー）を描画
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = radius * 0.005; 
-            
-            ctx.fillText(digitalText, 0, yPosition);
+                // 2. テキスト（ネオンカラー）を描画
+                ctx.fillStyle = color;
+                ctx.shadowColor = color;
+                ctx.shadowBlur = radius * 0.005; 
+                
+                ctx.fillText(digitalText, 0, yPosition);
 
-            ctx.restore();
+                ctx.restore();
+            } // デジタル表示描画の終了
             
             drawTime(ctx, radius); 
 
@@ -610,6 +619,17 @@
             canvas = document.getElementById("clockCanvas");
             ctx = canvas.getContext("2d");
             
+            // --- LocalStorageからの状態復元 ---
+            
+            // グリッドエフェクトの状態を復元
+            const storedGridState = localStorage.getItem('showGridEffect');
+            const showGrid = storedGridState === null ? true : storedGridState === 'true'; // デフォルトは表示
+            toggleGridEffect(showGrid); // 初期適用 (メッセージはここでは出さない)
+
+            // デジタル時計の状態を復元 (修正箇所)
+            const storedDigitalState = localStorage.getItem('showDigitalClock');
+            showDigitalClock = storedDigitalState === null ? true : storedDigitalState === 'true'; // デフォルトは表示
+            
             // 初期リサイズと描画 (原点設定とスケーリングを含む)
             resizeCanvas();
             
@@ -624,8 +644,16 @@
             
             // --- イベントリスナーを設定 ---
             document.getElementById('neonColorPicker').onchange = (e) => changeNeonColor(e.target.value);
+            
+            // グリッドトグル
             const toggleGridInput = document.getElementById('toggleGrid');
+            toggleGridInput.checked = showGrid;
             toggleGridInput.onchange = (e) => toggleGridEffect(e.target.checked);
+            
+            // デジタルトグル (修正箇所)
+            const toggleDigitalInput = document.getElementById('toggleDigital');
+            toggleDigitalInput.checked = showDigitalClock;
+            toggleDigitalInput.onchange = (e) => toggleDigitalClock(e.target.checked);
             
             // フルスクリーンボタン
             document.getElementById('fullscreenToggleBtn').onclick = toggleFullscreen;
@@ -640,8 +668,6 @@
                     closeSettingsModal();
                 }
             };
-            
-            toggleGridEffect(document.getElementById('toggleGrid').checked); 
             
             // 画像の自動適用
             loadImage(faceImageUrl);
@@ -662,7 +688,6 @@
 <body class="font-sans flex flex-col items-center justify-center">
 
     <!-- 🖥️ フルスクリーン切り替えボタン (Left/Bottom) -->
-    <!-- large screen (lg:) の static/order-* 設定を削除し、fixed bottom-4 left-4 を維持 -->
     <button id="fullscreenToggleBtn" 
         class="neon-button p-4 rounded-full transition duration-300 
                fixed bottom-4 left-4 z-40">
@@ -675,13 +700,11 @@
     </button>
     
     <!-- 時計コンテナ (レスポンシブなサイズ設定) -->
-    <!-- large screen (lg:) の order-2 設定を削除 -->
     <div id="clockContainer" class="flex items-center justify-center">
         <canvas id="clockCanvas"></canvas>
     </div>
 
     <!-- ⚙️ 設定アイコンボタン (Right/Bottom) -->
-    <!-- large screen (lg:) の static/order-* 設定を削除し、fixed bottom-4 right-4 を維持 -->
     <button id="openSettingsBtn" 
         class="neon-button p-4 rounded-full transition duration-300 
                fixed bottom-4 right-4 z-40">
@@ -718,6 +741,15 @@
                 <label for="toggleGrid" class="text-sm font-bold text-gray-200">背景グリッドエフェクト</label>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="toggleGrid" class="sr-only peer"> 
+                    <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--neon-color)]"></div>
+                </label>
+            </div>
+            
+            <!-- デジタル時計表示トグル (新しく追加) -->
+            <div class="flex items-center justify-between pt-2 border-t border-gray-700 mt-2">
+                <label for="toggleDigital" class="text-sm font-bold text-gray-200">デジタル時計の表示</label>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggleDigital" class="sr-only peer"> 
                     <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--neon-color)]"></div>
                 </label>
             </div>
